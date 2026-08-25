@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TrainingMode {
+  LEARN
+  GUESS
+  CHOICE
+  TIMEATTACK
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Se guarda hasheado: si se filtra la base, no se pueden robar sesiones.
+  refreshTokenHash String?
+
+  shortcuts Shortcut[]
+  attempts  Attempt[]
+}
+
+model Tool {
+  id          String @id @default(uuid())
+  key         String @unique
+  title       String
+  description String
+  icon        String
+
+  shortcuts Shortcut[]
+}
+
+model Shortcut {
+  id          String   @id @default(uuid())
+  description String
+  expected    String[]
+  level       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  toolId String
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  attempts Attempt[]
+
+  @@index([toolId, level])
+  @@index([ownerId])
+}
+
+model Attempt {
+  id             String       @id @default(uuid())
+  pressed        String[]
+  isCorrect      Boolean
+  responseTimeMs Int
+  mode           TrainingMode @default(GUESS)
+  createdAt      DateTime     @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  shortcutId String
+  shortcut   Shortcut @relation(fields: [shortcutId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, shortcutId])
+}
