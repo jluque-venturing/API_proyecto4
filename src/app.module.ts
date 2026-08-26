@@ -6,6 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ShortcutsModule } from './shortcuts/shortcuts.module';
+import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -15,6 +17,8 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    ToolsModule,
+    ShortcutsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
