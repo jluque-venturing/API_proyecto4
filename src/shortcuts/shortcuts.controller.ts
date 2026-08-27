@@ -12,6 +12,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateShortcutDto } from './dto/create-shortcut.dto';
@@ -19,6 +20,8 @@ import { QueryShortcutsDto, RandomShortcutDto } from './dto/query-shortcuts.dto'
 import { UpdateShortcutDto } from './dto/update-shortcut.dto';
 import { ShortcutsService } from './shortcuts.service';
 
+@ApiTags('shortcuts')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('shortcuts')
 export class ShortcutsController {
