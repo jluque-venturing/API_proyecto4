@@ -1,98 +1,230 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Shortcuts Trainer API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST para un entrenador de atajos de teclado. El cliente captura las teclas que se presionan y las envía al servidor; **la API decide si el atajo estuvo bien**, guarda el intento y calcula las estadísticas.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**Autor:** Luque Jonatan
 
-## Description
+Proyecto 4 — Integrartec 2026.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Links
 
-## Project setup
+| | |
+|---|---|
+| Deploy | https://apiproyecto4-production.up.railway.app |
+| Documentación interactiva | https://apiproyecto4-production.up.railway.app/docs |
+| Repositorio | https://github.com/jluque-venturing/API_proyecto4 |
 
-```bash
-$ npm install
+## Idea heredada del Segundo Proyecto Integrador
+
+En el Proyecto 2 el entrenador vivía entero en el navegador: el catálogo de atajos, la comparación de teclas y el historial se guardaban en el store local (Zustand + localStorage). Todo lo que decidía si acertaste o no corría en el cliente.
+
+```
+ANTES (Proyecto 2)                  AHORA (Proyecto 4)
+┌──────────────┐                    ┌──────────────┐        ┌──────────────┐
+│  Navegador   │                    │  Navegador   │  HTTP  │     API      │
+│  ─────────── │                    │  ─────────── │ ─────► │  ─────────── │
+│  catálogo    │                    │  captura     │        │  compara     │
+│  compara     │                    │  teclas      │ ◄───── │  guarda      │
+│  guarda      │                    └──────────────┘  JSON  │  calcula     │
+│  localStorage│                                            └──────┬───────┘
+└──────────────┘                                                   │
+                                                            ┌──────▼───────┐
+                                                            │  PostgreSQL  │
+                                                            └──────────────┘
 ```
 
-## Compile and run the project
+El cambio de fondo: la corrección se movió al servidor. El cliente ya no puede mentir sobre si acertó, porque no conoce la respuesta esperada hasta que la API se la dice.
+
+## Tecnologías
+
+- **NestJS 11** + **TypeScript**
+- **Prisma 6** como ORM
+- **PostgreSQL**
+- **JWT** (access + refresh) con Passport, y bcrypt para las contraseñas
+- **Helmet** y **@nestjs/throttler** para seguridad
+- **Scalar** + **@nestjs/swagger** para la documentación en `/docs`
+- **pnpm** como gestor de paquetes
+- Deploy en **Railway**
+
+## Instalación
+
+Requiere Node 20 y pnpm.
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/jluque-venturing/API_proyecto4.git
+cd API_proyecto4
+pnpm install
 ```
 
-## Run tests
+`pnpm install` dispara `prisma generate` automáticamente mediante el script `postinstall`.
+
+## Variables de entorno
+
+Copiá `.env.example` a `.env` y completá los valores:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `DATABASE_URL` | sí | Cadena de conexión a PostgreSQL |
+| `JWT_SECRET` | sí | Secreto para firmar el access token |
+| `JWT_REFRESH_SECRET` | sí | Secreto para firmar el refresh token, distinto al anterior |
+| `JWT_EXPIRES_IN` | no | Vida del access token, por defecto `15m` |
+| `JWT_REFRESH_EXPIRES_IN` | no | Vida del refresh token, por defecto `7d` |
+| `PORT` | no | Puerto de escucha, por defecto `3000` |
+| `CORS_ORIGIN` | no | Orígenes permitidos separados por coma. Sin valor no se permite ningún origen externo |
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+El archivo `.env` está en `.gitignore` y nunca se commitea. En producción las variables se cargan en el panel de Railway.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Base de datos
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+pnpm prisma migrate dev     # crea las tablas en desarrollo
+pnpm prisma db seed         # carga el catálogo de herramientas y atajos
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+El seed es idempotente: hace `upsert` de las herramientas y no vuelve a insertar atajos si el catálogo ya está cargado.
 
-## Resources
+## Levantar el proyecto
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+pnpm start:dev      # desarrollo, con watch
+pnpm build          # compila a dist/
+pnpm start:prod     # producción, requiere pnpm build previo
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Tests
 
-## Support
+```bash
+pnpm test           # unitarios
+pnpm test:e2e       # end to end
+pnpm test:cov       # cobertura
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Autenticación
 
-## Stay in touch
+Los endpoints marcados con 🔒 requieren el header:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```
+Authorization: Bearer <access_token>
+```
 
-## License
+El access token se obtiene en `/auth/register` o `/auth/login`. Cuando vence se renueva con `/auth/refresh`, enviando el **refresh token** en ese mismo header.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Endpoints
+
+### Auth
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `POST` | `/auth/register` | — | 201 | Crea un usuario y devuelve access token y refresh token. Body: `email`, `password` (8 a 72), `name` opcional |
+| `POST` | `/auth/login` | — | 200 | Devuelve access token y refresh token |
+| `POST` | `/auth/refresh` | 🔒 refresh | 200 | Emite un nuevo access token |
+| `POST` | `/auth/logout` | 🔒 | 204 | Invalida el refresh token guardado |
+| `GET` | `/auth/me` | 🔒 | 200 | Perfil del usuario autenticado |
+
+`register` y `login` están limitados a 5 peticiones por minuto.
+
+### Tools
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `GET` | `/tools` | 🔒 | 200 | Lista las herramientas del catálogo |
+| `GET` | `/tools/:key` | 🔒 | 200 | Una herramienta por su `key` |
+
+### Shortcuts
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `GET` | `/shortcuts` | 🔒 | 200 | Catálogo filtrado. Query: `tool`, `level` (1 a 4) |
+| `GET` | `/shortcuts/random` | 🔒 | 200 | Uno al azar para practicar. Query: `tool`, `level`, `exclude` |
+| `GET` | `/shortcuts/:id` | 🔒 | 200 | Un atajo por id |
+| `POST` | `/shortcuts` | 🔒 | 201 | Crea un atajo propio |
+| `PATCH` | `/shortcuts/:id` | 🔒 dueño | 200 | Edita un atajo propio |
+| `DELETE` | `/shortcuts/:id` | 🔒 dueño | 204 | Borra un atajo propio |
+
+Los atajos del catálogo (`ownerId: null`) son de solo lectura: nadie puede editarlos ni borrarlos.
+
+### Attempts
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `POST` | `/attempts` | 🔒 | 201 | Envía las teclas presionadas y responde si acertó. Body: `shortcutId` (uuid), `pressed` (1 a 5 teclas), `responseTimeMs`, `mode` opcional |
+| `GET` | `/attempts` | 🔒 | 200 | Historial propio. Query: `tool`, `limit` (1 a 100) |
+| `DELETE` | `/attempts` | 🔒 | 204 | Borra el historial y resetea las estadísticas |
+
+### Stats
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `GET` | `/stats/me` | 🔒 | 200 | Precisión global y atajos dominados |
+| `GET` | `/stats/me/tools/:key` | 🔒 | 200 | Precisión, racha y tiempo por herramienta |
+
+### Health
+
+| Método | Ruta | Auth | Código | Qué hace |
+|---|---|---|---|---|
+| `GET` | `/` | — | 200 | Comprobación de que el servicio está vivo |
+
+## El endpoint principal
+
+`POST /attempts` es donde vive la regla de negocio del proyecto:
+
+```
+POST /attempts
+{
+  "shortcutId": "6de93ce3-3e77-4ef2-bd4f-a57bd433ff18",
+  "pressed": ["Control", "x"],
+  "responseTimeMs": 1200,
+  "mode": "GUESS"
+}
+                    │
+                    ▼
+      normalizar teclas (alias: Cmd→Meta, " "→Space)
+                    │
+                    ▼
+      comparar contra el combo esperado
+                    │
+        ┌───────────┴───────────┐
+        ▼                       ▼
+   isCorrect: true         isCorrect: false
+        │                       │
+        └───────────┬───────────┘
+                    ▼
+            guardar el intento en la base
+                    │
+                    ▼
+{
+  "id": "9c044f4f-7259-4e04-9c48-886adfed7800",
+  "isCorrect": true,
+  "pressed": ["Control", "x"],
+  "expected": ["Control", "x"],
+  "description": "Cortar línea",
+  "responseTimeMs": 1200,
+  "currentStreak": 1,
+  "createdAt": "2026-09-01T00:35:56.611Z"
+}
+```
+
+`mode` acepta `LEARN`, `GUESS`, `CHOICE` o `TIMEATTACK`. `pressed` admite entre 1 y 5 teclas.
+
+El cliente manda las teclas crudas y no recibe la respuesta esperada hasta después de haber respondido.
+
+## Seguridad
+
+- Contraseñas hasheadas con **bcrypt**; nunca se devuelven en ninguna respuesta.
+- **Access token de vida corta** y refresh token almacenado hasheado, invalidable con `/auth/logout`.
+- **Helmet** con cabeceras de seguridad, y una política de CSP relajada únicamente en `/docs` porque Scalar carga su bundle desde un CDN.
+- **ValidationPipe global** con `whitelist` y `forbidNonWhitelisted`: cualquier campo no declarado en el DTO hace fallar la petición.
+- **Rate limiting** en los endpoints de autenticación.
+- Los errores no exponen stack traces ni detalles internos.
+
+## Deploy
+
+Desplegado en Railway con PostgreSQL gestionado por el proveedor. La configuración vive en `railway.json`:
+
+- `preDeployCommand` corre `prisma migrate deploy` antes de que la nueva versión reciba tráfico.
+- `startCommand` es `node dist/main`, para servir el build compilado y no el modo desarrollo.
+- Las variables de entorno se cargan en el panel de Railway y nunca se commitean.
