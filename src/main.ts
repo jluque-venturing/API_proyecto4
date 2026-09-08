@@ -5,6 +5,7 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 const RUTA_DOCS = '/docs';
 
@@ -41,6 +42,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('Shortcuts Trainer API')
