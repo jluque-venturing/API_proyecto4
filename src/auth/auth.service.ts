@@ -14,6 +14,10 @@ import { RegisterDto } from './dto/register.dto';
 
 const BCRYPT_ROUNDS = 12;
 
+// Hash de un password que nadie tiene: se compara contra este cuando el email no existe.
+const HASH_SENUELO =
+  '$2b$12$8omPSDT626gxRZgKKlk/huYIEgc3GnzzzFuexI.LkG0XULAnpN9ru';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -34,18 +38,25 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<Tokens> {
     const user = await this.users.findByEmail(dto.email);
-    // Mismo mensaje para email inexistente y password incorrecta: no revelar que usuarios existen.
-    if (!user) throw new UnauthorizedException('Credenciales invalidas');
 
-    const coincide = await bcrypt.compare(dto.password, user.password);
-    if (!coincide) throw new UnauthorizedException('Credenciales invalidas');
+    // Se compara siempre, aun sin usuario: cortar antes revelaria por tiempo que el email no existe.
+    const coincide = await bcrypt.compare(
+      dto.password,
+      user?.password ?? HASH_SENUELO,
+    );
+
+    // Mismo mensaje para email inexistente y password incorrecta: no revelar que usuarios existen.
+    if (!user || !coincide) {
+      throw new UnauthorizedException('Credenciales invalidas');
+    }
 
     return this.emitirTokens(user.id, user.email);
   }
 
   async refresh(userId: string, refreshToken: string): Promise<Tokens> {
     const user = await this.users.findById(userId);
-    if (!user?.refreshTokenHash) throw new UnauthorizedException('Sesion cerrada');
+    if (!user?.refreshTokenHash)
+      throw new UnauthorizedException('Sesion cerrada');
 
     if (this.hashToken(refreshToken) !== user.refreshTokenHash) {
       throw new UnauthorizedException('Refresh token invalido');
@@ -82,7 +93,10 @@ export class AuthService {
   }
 
   private duracion(clave: string, porDefecto: string) {
-    return this.config.get<string>(clave, porDefecto) as JwtSignOptions['expiresIn'];
+    return this.config.get<string>(
+      clave,
+      porDefecto,
+    ) as JwtSignOptions['expiresIn'];
   }
 
   // SHA-256 y no bcrypt: el token ya es de alta entropia y bcrypt truncaria el JWT a 72 bytes.
