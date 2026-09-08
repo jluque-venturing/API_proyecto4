@@ -86,7 +86,11 @@ async function bootstrap() {
     .build();
 
   const documento = SwaggerModule.createDocument(app, config);
-  app.use(RUTA_DOCS, apiReference({ content: documento }));
+  app.use(
+    RUTA_DOCS,
+    // Sin persistAuth el token se pierde en cada recarga de /docs y todo vuelve a dar 401.
+    apiReference({ content: documento, persistAuth: true }),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }
